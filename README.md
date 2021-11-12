@@ -18,7 +18,7 @@ I wanted to play GTA Online and Lutris kept having bugs here and there which I c
 
 Your saves will be located at `$HOME/.local/share/Rockstar Games/Saves/` as per XDG specification.
 
-For the techies out there, the Wine prefix is located by default at `$HOME/.local/share/Rockstar Games/Saves/`.
+For the techies out there, the Wine prefix is located by default at `$HOME/.local/share/Rockstar Games/wineprefix/`.
 
 If you plan on playing GTA Five with the keyboard then note that the stock Wine has a bug that makes the game freeze for a few seconds whenever a keyboard input is pressed. I'd be glad to know the root cause of this, but searching on Bugzilla gave me no results.
 
