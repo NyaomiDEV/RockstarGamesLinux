@@ -1,0 +1,110 @@
+#!/bin/sh
+
+source "${HOME}/.local/share/Rockstar Games/config.env"
+
+[ -n "${extra_path}" ] && export PATH="${extra_path}:${PATH}" || true
+
+: ${WINEPREFIX:="${HOME}/.local/share/Rockstar Games/wineprefix"}
+: ${use_mangohud:="false"}
+: ${gamedrive:="${HOME}/.local/share/Rockstar Games/Games"}
+
+: ${DXVK_STATE_CACHE_PATH:="${WINEPREFIX}/dxvk/cache"}
+: ${DXVK_LOG_PATH:="none"}
+
+if [ "${use_mangohud}" == "true" ]; then
+	export MANGOHUD=1
+	export LD_PRELOAD="${LD_PRELOAD}:libMangoHud.so"
+fi
+
+export WINEPREFIX
+export DXVK_STATE_CACHE_PATH
+export DXVK_LOG_PATH
+
+echo "Launching the Rockstar Games Launcher with:"
+echo "PATH: ${PATH}"
+echo "WINEPREFIX: ${WINEPREFIX}"
+echo "Arguments: $@"
+echo "--------------"
+echo "MangoHud: ${use_mangohud}"
+echo "DXVK State Cache path: ${DXVK_STATE_CACHE_PATH}"
+echo "DXVK Logs path: ${DXVK_LOG_PATH}"
+echo "--------------"
+echo "Game drive: ${gamedrive}"
+echo "Save location: ${savedir}"
+echo "--------------"
+
+if [ ! -d "${WINEPREFIX}" ]; then
+	echo "Wineprefix was not found! Generating one..."
+	echo "It will take a bit of time so sit back and watch"
+
+	mkdir -p "${WINEPREFIX}"
+	mkdir -p "${DXVK_STATE_CACHE_PATH}"
+
+	rgl_setup_dir="${HOME}/.cache/Rockstar Games"
+	if [ -f "${rgl_setup_dir}/RockstarGamesLauncher.exe" ]; then
+		echo "Downloading the Social Club installer (this happens only once)"
+		rgl_setup_url="https://gamedownloads.rockstargames.com/public/installer/Rockstar-Games-Launcher.exe"
+		mkdir -p "${rgl_setup_dir}"
+		curl -Lo "${rgl_setup_dir}/RockstarGamesLauncher.exe" "${rgl_setup_url}"
+	fi
+
+	echo "Booting into Wineprefix"
+	env WINEDLLOVERRIDES="winemenubuilder.exe=d" wineboot -ui >/dev/null 2>&1
+
+	echo "Using winetricks to install deps"
+	winetricks --gui -q autostart_winedbg=disabled fontsmooth=rgb mimeassoc=off corefonts vcrun2019 dxvk win7
+
+	echo "Reasonably sandboxing the home folder"
+	# Replace any home links with actual folders (avoid HOME pollution)
+	pwd="${PWD}"
+	cd "${WINEPREFIX}/drive_c/users/${USER}"
+	for x in *; do
+		if test -h "${x}" && test -d "${x}"; then
+			rm -f "${x}"
+			mkdir -p "${x}"
+		fi
+	done
+	cd "${pwd}"
+	
+	# Work around Wine update bugs
+	echo disable > "${WINEPREFIX}/.update-timestamp"
+	
+	echo "Launching Rockstar Games Launcher installer"
+
+	wine "${tempfile}" >/dev/null 2>&1
+	echo "Wineprefix ready!"
+	echo "--------------"
+fi
+
+# Remap saves outside of wineprefix
+wine_saves="${WINEPREFIX}/drive_c/users/${USER}/Documents/Rockstar Games"
+
+[ -d "${savedir}" ] ||
+	(mkdir -p "${savedir}" && echo "Creating save directory...")
+
+[ -d "${wine_saves}" ] && [ ! -L "${wine_saves}" ] &&
+	(mv "${wine_saves}" "${wine_saves}.backup" && echo "Backing up saves inside Wineprefix (remember to move them to the correct place later)")
+
+[ -L "${wine_saves}" ] && [ "$(readlink -e "${wine_saves}")" == "${savedir}" ] ||
+	(ln -fs "${savedir}" "${wine_saves}" && echo "Save game folder moved/deleted! Relinking...")
+
+# Remap z: drive to game location
+[ -d "${gamedrive}" ] ||
+	(mkdir -p "${gamedrive}" && echo "Creating game drive directory...")
+
+[ -L "${WINEPREFIX}/dosdevices/z:" ] && [ "$(readlink -e "${WINEPREFIX}/dosdevices/z:")" == "${gamedrive}" ] ||
+	(ln -fs "${gamedrive}" "${WINEPREFIX}/dosdevices/z:" && echo "Game drive moved/deleted! Relinking...")
+
+# The actual stuff
+if [ "$KILL" == "1" ]; then
+	echo "Killing Wineserver"
+	wineserver -k >/dev/null 2>&1
+	[ "$ONLY" == "1" ] && echo "--------------" && exit
+fi
+
+launcher="${WINEPREFIX}/drive_c/Program Files/Rockstar Games/Launcher/Launcher.exe"
+echo "Executing 'wine ${launcher} $@'..."
+echo "--------------"
+
+cd "${WINEPREFIX}/drive_c/Program Files/Rockstar Games/Launcher"
+exec wine "$launcher" "$@"

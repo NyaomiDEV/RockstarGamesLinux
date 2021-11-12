@@ -1,0 +1,4 @@
+#!/bin/sh
+title_id="gta5"
+
+exec rockstar-games-launcher -skipPatcherCheck -minmodeApp=$title_id @args.txt

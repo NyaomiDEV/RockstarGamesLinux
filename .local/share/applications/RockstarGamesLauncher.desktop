@@ -1,0 +1,11 @@
+[Desktop Entry]
+Comment=Play games from Rockstar Games Social Club
+Exec=rockstar-games-launcher
+GenericName=Game launcher
+Name=Rockstar Games Launcher
+Path=/home/naomi/.local/rockstar
+StartupNotify=true
+Terminal=false
+Type=Application
+Icon=RockstarGamesLauncher
+StartupWMClass=socialclubhelper.exe

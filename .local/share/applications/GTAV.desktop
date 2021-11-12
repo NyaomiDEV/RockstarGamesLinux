@@ -1,0 +1,11 @@
+[Desktop Entry]
+Comment=Play GTA 5 from Rockstar Games Social Club
+Exec=gtav
+GenericName=Game
+Name=Grand Theft Auto V
+Path=/home/naomi/.local/rockstar
+StartupNotify=true
+Terminal=false
+Type=Application
+Icon=GTAV
+StartupWMClass=GTAV.exe
