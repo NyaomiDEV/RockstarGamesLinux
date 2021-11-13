@@ -14,6 +14,7 @@ source "${HOME}/.local/share/Rockstar Games/config.env"
 export WINEPREFIX
 export DXVK_STATE_CACHE_PATH
 export DXVK_LOG_PATH
+export WINEDLLOVERRIDES="winemenubuilder.exe=" 
 
 echo "Launching the Rockstar Games Launcher with:"
 echo "PATH: ${PATH}"
@@ -44,7 +45,7 @@ if [ ! -d "${WINEPREFIX}" ]; then
 	fi
 
 	echo "Booting into Wineprefix"
-	env WINEDLLOVERRIDES="winemenubuilder.exe=d" wineboot -ui >/dev/null 2>&1
+	wineboot -ui >/dev/null 2>&1
 
 	echo "Disabling Wine debugger inside Wine prefix"
 	cat > "${rgl_setup_dir}/winedbg.reg" <<_EOF_
